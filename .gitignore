@@ -1,0 +1,19 @@
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE Settings
+.idea/
+.vscode/
+
+# Prompt Library Content (Ignore all media folders)
+content/*
+
+# Keep the content directory structure
+!content/.gitkeep
+
+# Temporary/Local Files
+*.log
+*.tmp
+temp/

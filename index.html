@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptVault</title>
+    <!-- Premium Font: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Premium Dark Palette */
+            --bg-body: #050505;
+            --bg-card: #121212;
+            --bg-card-hover: #1a1a1a;
+            --border-color: #2a2a2a;
+
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+
+            --accent-primary: #6366f1;
+            /* Indigo */
+            --accent-hover: #4f46e5;
+            --accent-glow: rgba(99, 102, 241, 0.5);
+
+            --glass-bg: rgba(18, 18, 18, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Background Glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(30, 30, 40, 0.4) 0%, transparent 50%);
+            z-index: -1;
+            animation: pulse-bg 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse-bg {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 0.8;
+            }
+        }
+
+        /* Sticky Glass Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .brand h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #fff, #a5b4fc);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumbs span {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .breadcrumbs span:hover {
+            color: var(--text-primary);
+        }
+
+        .breadcrumbs .separator {
+            margin: 0 10px;
+            color: #444;
+            cursor: default;
+        }
+
+        .breadcrumbs .active {
+            color: var(--text-primary);
+            font-weight: 500;
+            cursor: default;
+        }
+
+        /* Main Container */
+        #main-content {
+            padding: 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+            min-height: calc(100vh - 80px);
+            /* Adjust for header */
+        }
+
+        /* Grid System */
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        /* Premium Card (Categories) */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: var(--accent-primary);
+        }
+
+        .card-media {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #000;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Overlay for Videos to prevent stealing mouse interactions in grid */
+        .card-media-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            /* Clickable layer */
+        }
+
+        .card-media video,
+        .card-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .card:hover .card-media video,
+        .card:hover .card-media img {
+            transform: scale(1.05);
+        }
+
+        .card-media .folder-icon {
+            font-size: 3rem;
+            color: #333;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #222 0%, #000 100%);
+        }
+
+        .card-info {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Detail View Styles */
+        .project-container {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: rgba(20, 20, 20, 0.5);
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+
+        .section-header {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .download-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #ccc;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            border-color: var(--accent-primary);
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .section-divider {
+            height: 1px;
+            flex-grow: 1;
+            background: linear-gradient(90deg, var(--border-color), transparent);
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* Media Item (Thumbnail) */
+        .media-item {
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .media-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .media-content {
+            aspect-ratio: 16/9;
+            /* Uniform thumbnails */
+            background: #000;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .media-content video,
+        .media-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Crop to fill */
+        }
+
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        .media-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border-color);
+            background: #151515;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80%;
+        }
+
+        /* Text Prompt Card */
+        .prompt-card {
+            background: #1e1e1e;
+            border-left: 3px solid var(--accent-primary);
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .prompt-text {
+            font-family: 'Consolas', monospace;
+            color: #d4d4d4;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .copy-btn {
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        /* Filter Chips */
+        .filter-chip {
+            background: #222;
+            border: 1px solid #444;
+            color: #ddd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover {
+            background: #333;
+            border-color: #666;
+        }
+
+        .filter-chip.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Lightbox */
+        #lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            display: none;
+            /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #lightbox.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 80vh;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .lightbox-content video,
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+        }
+
+        .lightbox-controls {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-primary);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: transparent;
+            color: white;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 1010;
+        }
+
+        /* Utility */
+        .loading,
+        .error {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+            }
+
+            #main-content {
+                padding: 20px;
+            }
+
+            #grid-container {
+                grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="brand">
+            <h1>PromptVault</h1>
+        </div>
+        <nav class="breadcrumbs" id="breadcrumbs">
+            <!-- Injected via JS -->
+        </nav>
+    </header>
+
+    <div id="main-content">
+        <!-- Content injected here -->
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox">
+        <button class="close-btn" onclick="closeLightbox()">×</button>
+        <div class="lightbox-content" id="lightbox-wrapper">
+            <!-- Media injected here -->
+        </div>
+        <div class="lightbox-controls">
+            <button class="nav-btn" onclick="navLightbox(-1)">❮</button>
+            <button class="nav-btn" onclick="navLightbox(1)">❯</button>
+        </div>
+        <div id="lightbox-caption" style="color:#aaa; margin-top:15px;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'api.php';
+        const mainContent = document.getElementById('main-content');
+        const breadcrumbsContainer = document.getElementById('breadcrumbs');
+
+        // State Management
+        let navigationStack = [
+            { name: 'Home', action: () => loadCategories() }
+        ];
+
+        // Lightbox State
+        let currentGallery = []; // Array of {type, path, name}
+        let currentIndex = 0;
+        let currentCategory = ''; // For downloads
+
+        // Initial Load
+        loadCategories();
+
+        // ---- Navigation Logic ----
+
+        function updateBreadcrumbs() {
+            breadcrumbsContainer.innerHTML = '';
+
+            navigationStack.forEach((item, index) => {
+                const span = document.createElement('span');
+                span.innerText = item.name;
+
+                if (index === navigationStack.length - 1) {
+                    span.className = 'active';
+                } else {
+                    span.onclick = () => {
+                        navigationStack = navigationStack.slice(0, index + 1);
+                        item.action();
+                        updateBreadcrumbs();
+                    };
+                }
+
+                breadcrumbsContainer.appendChild(span);
+
+                if (index < navigationStack.length - 1) {
+                    const sep = document.createElement('span');
+                    sep.className = 'separator';
+                    sep.innerText = '/';
+                    breadcrumbsContainer.appendChild(sep);
+                }
+            });
+        }
+
+        // ---- Views ----
+
+        async function loadCategories() {
+            try {
+                navigationStack = [{ name: 'Home', action: () => loadCategories() }];
+                updateBreadcrumbs();
+                currentCategory = ''; // Reset
+
+                renderLoading();
+
+                const response = await fetch(`${API_URL}?mode=categories`);
+                if (!response.ok) throw new Error('Failed to connect to API');
+
+                const json = await response.json();
+                if (json.status !== 'success') throw new Error(json.message);
+
+                renderCategories(json.data);
+
+            } catch (err) {
+                renderError(err.message);
+            }
+        }
+
+        function renderCategories(categories) {
+            if (categories.length === 0) {
+                mainContent.innerHTML = '<div class="loading">No categories found in content folder.</div>';
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.id = 'grid-container';
+
+            categories.forEach(cat => {
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                card.onclick = () => {
+                    navigationStack.push({
+                        name: cat.name,
+                        action: () => loadProjects(cat.name)
+                    });
+                    loadProjects(cat.name);
+                    updateBreadcrumbs();
+                };
+
+                let mediaHtml = '';
+                if (cat.preview) {
+                    mediaHtml = `<video src="${cat.preview}" autoplay muted loop playsinline></video>`;
+                } else {
+                    mediaHtml = `<div class="folder-icon">📁</div>`;
+                }
+
+                card.innerHTML = `
+                <div class="card-media">
+                    ${mediaHtml}
+                    <div class="card-media-overlay"></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">${cat.name}</div>
+                    <div class="card-meta">
+                        ${cat.date ? 'Updated: ' + cat.date : 'Click to explore'}
+                    </div>
+                </div>
+            `;
+                grid.appendChild(card);
+            });
+
+            mainContent.innerHTML = '';
+            mainContent.appendChild(grid);
+        }
+
+        async function loadProjects(categoryName) {
+            try {
+                currentCategory = categoryName;
+                renderLoading();
+
+                const response = await fetch(`${API_URL}?mode=projects&category=${encodeURIComponent(categoryName)}`);
+                if (!response.ok) throw new Error('API Error');
+
+                const json = await response.json();
+                if (json.status !== 'success') throw new Error(json.message);
+
+                renderProjectsView(json.data);
+
+            } catch (err) {
+                renderError(err.message);
+            }
+        }
+
+        let currentProjectsData = [];
+
+        async function renderProjectsView(projects) {
+            currentProjectsData = projects;
+
+            if (projects.length === 0) {
+                mainContent.innerHTML = '<div class="loading">No projects found in this category.</div>';
+                return;
+            }
+
+            // Collect unique tags
+            const allTags = new Set();
+            projects.forEach(p => {
+                if (p.tags) p.tags.forEach(t => allTags.add(t));
+            });
+
+            mainContent.innerHTML = '';
+
+            // Render Filters
+            if (allTags.size > 0) {
+                const filterContainer = document.createElement('div');
+                filterContainer.style.marginBottom = '30px';
+                filterContainer.style.display = 'flex';
+                filterContainer.style.gap = '10px';
+                filterContainer.style.flexWrap = 'wrap';
+
+                const allBtn = document.createElement('button');
+                allBtn.innerText = 'All';
+                allBtn.className = 'filter-chip active';
+                allBtn.onclick = (e) => filterProjects('all', e.target);
+                filterContainer.appendChild(allBtn);
+
+                allTags.forEach(tag => {
+                    const btn = document.createElement('button');
+                    btn.innerText = tag;
+                    btn.className = 'filter-chip';
+                    btn.onclick = (e) => filterProjects(tag, e.target);
+                    filterContainer.appendChild(btn);
+                });
+
+                mainContent.appendChild(filterContainer);
+            }
+
+            const projectsWrapper = document.createElement('div');
+            projectsWrapper.id = 'projects-wrapper';
+            mainContent.appendChild(projectsWrapper);
+
+            for (const proj of projects) {
+                const container = document.createElement('div');
+                container.className = 'project-container';
+                container.dataset.tags = proj.tags ? proj.tags.join(',') : '';
+
+                // Header
+                container.innerHTML = `
+                <div class="section-header">
+                    <div class="section-title">
+                        ${proj.name} 
+                        ${proj.tags && proj.tags.length ? `<span style="font-size:0.8rem; background:#333; padding:2px 8px; border-radius:4px; margin-left:10px; color:#aaa;">${proj.tags.join(', ')}</span>` : ''}
+                    </div>
+                    <button class="download-btn" onclick="downloadProject('${currentCategory}', '${proj.name}')" title="Download ZIP">⬇️</button>
+                    <div class="section-divider"></div>
+                </div>
+            `;
+
+                // 1. Files & Text
+                const mediaFiles = [];
+                const textFiles = [];
+
+                proj.files.forEach(f => {
+                    if (f.type === 'video' || f.type === 'image') mediaFiles.push(f);
+                    else if (f.type === 'text') textFiles.push(f);
+                });
+
+                // Render Text/Prompts First
+                if (textFiles.length > 0) {
+                    const textContainer = document.createElement('div');
+                    for (const txtFile of textFiles) {
+                        const promptCard = document.createElement('div');
+                        promptCard.className = 'prompt-card';
+
+                        // Fetch Text Content
+                        let content = 'Loading...';
+                        try {
+                            const res = await fetch(txtFile.path);
+                            content = await res.text();
+                        } catch (e) { content = 'Error loading text.'; }
+
+                        const id = 'txt-' + Math.random().toString(36).substr(2, 9);
+
+                        promptCard.innerHTML = `
+                        <div class="prompt-header">
+                            <span class="file-name" style="font-size:1rem; color:#fff;">${txtFile.name}</span>
+                            <button class="copy-btn" onclick="copyText('${id}')">Copy Prompt</button>
+                        </div>
+                        <div class="prompt-text" id="${id}">${escapeHtml(content)}</div>
+                    `;
+                        textContainer.appendChild(promptCard);
+                    }
+                    container.appendChild(textContainer);
+                }
+
+                // Render Media Grid
+                if (mediaFiles.length > 0) {
+                    const mediaGrid = document.createElement('div');
+                    mediaGrid.className = 'media-grid';
+
+                    mediaFiles.forEach((file, idx) => {
+                        const item = document.createElement('div');
+                        item.className = 'media-item';
+
+                        // Prepare data for lightbox
+                        // We need a global index OR local index. 
+                        // Let's attach an event listener that passes the specific list of this project.
+
+                        let content = '';
+                        let overlay = '';
+
+                        if (file.type === 'video') {
+                            content = `<video src="${file.path}#t=0.1" preload="metadata"></video>`; // #t=0.1 for thumbnail
+                            overlay = `<div class="play-icon">▶</div>`;
+                        } else {
+                            content = `<img src="${file.path}" loading="lazy" alt="${file.name}">`;
+                        }
+
+                        item.innerHTML = `
+                        <div class="media-content">
+                            ${content}
+                            ${overlay}
+                        </div>
+                        <div class="media-footer" style="flex-direction:column; align-items:flex-start;">
+                            <span class="file-name">${file.name}</span>
+                            <span style="font-size:0.75rem; color:#666; margin-top:4px;">${file.date}</span>
+                        </div>
+                    `;
+
+                        item.onclick = () => openLightbox(mediaFiles, idx);
+
+                        mediaGrid.appendChild(item);
+                    });
+                    container.appendChild(mediaGrid);
+                }
+
+                if (mediaFiles.length === 0 && textFiles.length === 0) {
+                    container.innerHTML += '<div style="color:#555;">Empty folder</div>';
+                }
+
+                projectsWrapper.appendChild(container);
+            }
+        }
+
+        // ---- Filter Logic ----
+        function filterProjects(tag, btnElement) {
+            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            const containers = document.querySelectorAll('.project-container');
+            containers.forEach(div => {
+                if (tag === 'all') {
+                    div.style.display = 'block';
+                } else {
+                    const projectTags = div.dataset.tags.split(',');
+                    const cleanTags = projectTags.map(t => t.trim());
+                    if (cleanTags.includes(tag)) {
+                        div.style.display = 'block';
+                    } else {
+                        div.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        function downloadProject(category, project) {
+            const url = `${API_URL}?mode=download&category=${encodeURIComponent(category)}&project=${encodeURIComponent(project)}`;
+            window.location.href = url;
+        }
+
+        // ---- Lightbox Logic ----
+
+        function openLightbox(files, startIndex) {
+            currentGallery = files;
+            currentIndex = startIndex;
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Stop scrolling
+            updateLightboxContent();
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+            const wrapper = document.getElementById('lightbox-wrapper');
+            wrapper.innerHTML = ''; // Clear to stop video
+        }
+
+        function navLightbox(dir) {
+            currentIndex += dir;
+            if (currentIndex < 0) currentIndex = currentGallery.length - 1;
+            if (currentIndex >= currentGallery.length) currentIndex = 0;
+            updateLightboxContent();
+        }
+
+        function updateLightboxContent() {
+            if (!currentGallery.length) return;
+
+            const file = currentGallery[currentIndex];
+            const wrapper = document.getElementById('lightbox-wrapper');
+            const caption = document.getElementById('lightbox-caption');
+
+            if (file.type === 'video') {
+                wrapper.innerHTML = `<video src="${file.path}" controls autoplay style="max-height:80vh; max-width:100%; box-shadow:0 0 30px #000;"></video>`;
+            } else {
+                wrapper.innerHTML = `<img src="${file.path}" style="max-height:80vh; max-width:100%; box-shadow:0 0 30px #000;">`;
+            }
+
+            caption.innerHTML = `
+            <div style="font-size:1.1rem; color:white; margin-bottom:5px;">${file.name}</div>
+            <div style="font-size:0.9rem; color:#888;">${file.date || ''} <span style="margin:0 10px;">•</span> ${currentIndex + 1} / ${currentGallery.length}</div>
+        `;
+        }
+
+        // Keyboard Support
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('lightbox').classList.contains('active')) return;
+
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navLightbox(-1);
+            if (e.key === 'ArrowRight') navLightbox(1);
+        });
+
+        // ---- Utilities ----
+
+        function renderLoading() {
+            mainContent.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading...</p>
+            </div>
+        `;
+        }
+
+        function renderError(msg) {
+            mainContent.innerHTML = `
+            <div class="error">
+                <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
+                <h3>Error</h3>
+                <p>${msg}</p>
+                <button onclick="loadCategories()" style="margin-top:20px; padding:10px 20px; background:var(--accent-primary); border:none; border-radius:6px; color:white; cursor:pointer;">Return Home</button>
+            </div>
+        `;
+        }
+
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Prompt copied to clipboard!');
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+    </script>
+
+</body>
+
+</html>
