@@ -519,6 +519,34 @@
             }
         }
 
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+            /* Push to bottom if flex column */
+        }
+
+        footer .highlight {
+            color: var(--text-primary);
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer .highlight:hover {
+            color: var(--accent-primary);
+        }
+
+        footer .version {
+            font-size: 0.8rem;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             header {
@@ -550,6 +578,14 @@
     <div id="main-content">
         <!-- Content injected here -->
     </div>
+
+    <footer>
+        <div class="footer-content">
+            <p>Developed By <a href="https://github.com/Bilal-AlSharaka" target="_blank" class="highlight">Bilal
+                    AlSharaka</a></p>
+            <p class="version">Version 01</p>
+        </div>
+    </footer>
 
     <!-- Lightbox Modal -->
     <div id="lightbox">
